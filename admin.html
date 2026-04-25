@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Transactions</title>
+    <style>
+        body { font-family: system-ui; background: #0f172a; color: white; padding: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #1e293b; border-radius: 0.5rem; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #00ff88; color: black; }
+        .badge { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: bold; }
+        .VERIFIED { background: #00ff88; color: black; }
+        .UNCLAIMED { background: #f59e0b; color: black; }
+    </style>
+</head>
+<body>
+    <h2>Live Transactions Dashboard</h2>
+    <table>
+        <thead><tr><th>TrxID</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody id="txTable"></tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZ_d7BdDH-9CGU8TG8kShqJePldOJU_Lo",
+            authDomain: "payment-verify-ri.firebaseapp.com",
+            databaseURL: "https://payment-verify-ri-default-rtdb.firebaseio.com",
+            projectId: "payment-verify-ri",
+            storageBucket: "payment-verify-ri.firebasestorage.app",
+            messagingSenderId: "634793768004",
+            appId: "1:634793768004:web:be6f2dc231a0c783693811",
+            measurementId: "G-1PWYM52GMM"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const txRef = ref(db, 'transactions');
+
+        onValue(txRef, (snapshot) => {
+            const data = snapshot.val();
+            let html = "";
+            if(data) {
+                Object.keys(data).forEach(trxId => {
+                    const tx = data[trxId];
+                    html += `<tr>
+                        <td>${tx.trx_id}</td>
+                        <td>${tx.method}</td>
+                        <td>৳${tx.amount}</td>
+                        <td><span class="badge ${tx.status}">${tx.status}</span></td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('txTable').innerHTML = html;
+        });
+    </script>
+</body>
+</html>
