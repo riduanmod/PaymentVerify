@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Hub Admin</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root { --primary: #00ff88; --bg: #0f172a; --surface: #1e293b; --text: #f8fafc; }
+        body { font-family: system-ui; background: var(--bg); color: var(--text); padding: 2rem; margin: 0; text-align: center; }
+        h2 { color: var(--primary); }
+        #installBtn { display: none; background: var(--primary); color: #000; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin: 1rem auto; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); }
+        #installBtn:active { transform: scale(0.95); }
+        table { width: 100%; max-width: 800px; margin: 2rem auto; border-collapse: collapse; background: var(--surface); border-radius: 0.5rem; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; color: var(--primary); }
+        .badge { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: bold; }
+        .UNCLAIMED { background: #f59e0b; color: #000; }
+        .VERIFIED { background: #00ff88; color: #000; }
+    </style>
+</head>
+<body>
+    <h2>Live SMS Transactions Hub</h2>
+    
+    <button id="installBtn">📲 Install Dashboard App</button>
+
+    <table>
+        <thead><tr><th>Method</th><th>TrxID</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody id="txTable"><tr><td colspan="4" style="text-align:center;">Loading...</td></tr></tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZ_d7BdDH-9CGU8TG8kShqJePldOJU_Lo",
+            authDomain: "payment-verify-ri.firebaseapp.com",
+            databaseURL: "https://payment-verify-ri-default-rtdb.firebaseio.com",
+            projectId: "payment-verify-ri",
+            storageBucket: "payment-verify-ri.firebasestorage.app",
+            messagingSenderId: "634793768004",
+            appId: "1:634793768004:web:be6f2dc231a0c783693811",
+            measurementId: "G-1PWYM52GMM"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const txRef = ref(db, 'transactions');
+
+        // Fetch Data
+        onValue(txRef, (snapshot) => {
+            const data = snapshot.val();
+            let html = "";
+            if(data) {
+                Object.keys(data).reverse().forEach(trxId => {
+                    const tx = data[trxId];
+                    html += `<tr>
+                        <td>${tx.method}</td>
+                        <td style="font-family: monospace;">${trxId}</td>
+                        <td>৳${tx.amount}</td>
+                        <td><span class="badge ${tx.status}">${tx.status}</span></td>
+                    </tr>`;
+                });
+            } else {
+                html = "<tr><td colspan='4' style='text-align:center;'>No transactions yet</td></tr>";
+            }
+            document.getElementById('txTable').innerHTML = html;
+        });
+
+        // PWA Installation Logic
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block'; // Show button when ready
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.error("SW Registration Failed", err));
+        }
+    </script>
+</body>
+</html>
